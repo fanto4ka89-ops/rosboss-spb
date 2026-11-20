@@ -1,0 +1,56 @@
+/* RosBoss: хромированный заголовок с бликом. Подключается posle-sborki.mjs – не стирается пересборкой. */
+@property --glint {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: -30%;
+}
+
+.s-hero h1 .chrome {
+  --glint: -30%;
+  /* блик поверх «хрома»: светлое небо сверху, тёмный горизонт посередине, отражение снизу */
+  background-image:
+    linear-gradient(105deg,
+      transparent calc(var(--glint) - 14%),
+      rgba(255, 255, 255, .95) var(--glint),
+      transparent calc(var(--glint) + 14%)),
+    linear-gradient(180deg,
+      #ffffff 0%,
+      #dfe6ee 30%,
+      #9aa7b5 48%,
+      #5d6875 53%,
+      #b9c4cf 62%,
+      #eef3f8 82%,
+      #c3ccd6 100%);
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgb(3 6 12 / .55));
+}
+
+/* Без JS (или пока он не загрузился) блик пробегает сам */
+.s-hero h1 .chrome:not(.is-live) {
+  animation: rb-glint 6s cubic-bezier(.45, 0, .2, 1) 0.6s infinite;
+}
+@keyframes rb-glint {
+  0%   { --glint: -30%; }
+  45%  { --glint: 130%; }
+  100% { --glint: 130%; }
+}
+
+/* Цифра рейтинга – тем же металлом */
+.s-hero .s-rating b {
+  background: linear-gradient(180deg, #ffffff 0%, #c7d0da 48%, #6b7684 54%, #e9eef4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s-hero h1 .chrome,
+  .s-hero h1 .chrome:not(.is-live) { animation: none; --glint: -30%; }
+}
