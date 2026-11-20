@@ -1,33 +1,46 @@
-// RosBoss: блик на хромированном заголовке следует за мышкой, как отражение на полированном диске.
-// На телефоне и когда мышь не над первым экраном – блик пробегает сам каждые несколько секунд.
+// RosBoss: «литой диск» в заголовке и живые карточки отзывов.
 (() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  // --- Заголовок: колесо медленно крутится, а под мышкой «прокатывается» вслед за ней ---
   const el = document.querySelector('.s-hero h1 .chrome');
   const hero = document.querySelector('.s-hero');
-  if (!el || !hero) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  el.classList.add('is-live');
-
-  let x = -30, target = -30, follow = false, t0 = performance.now();
-  const PERIOD = 6000, RUN = 2700; // цикл и сама пробежка, мс
-
-  if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    hero.addEventListener('pointermove', (e) => {
-      const r = el.getBoundingClientRect();
-      target = Math.max(-20, Math.min(120, ((e.clientX - r.left) / r.width) * 100));
-      follow = true;
-    });
-    hero.addEventListener('pointerleave', () => { follow = false; t0 = performance.now(); });
+  if (el && hero && !reduce) {
+    el.classList.add('is-live');
+    let angle = 0, speed = 0.4, boost = 0, lastX = null; // градусы за кадр
+    if (finePointer) {
+      hero.addEventListener('pointermove', (e) => {
+        if (lastX !== null) boost += (e.clientX - lastX) * 0.6; // движение мыши вправо – колесо катится вперёд
+        lastX = e.clientX;
+      });
+      hero.addEventListener('pointerleave', () => { lastX = null; });
+    }
+    const tick = () => {
+      boost *= 0.9; // инерция, как у раскрученного колеса
+      angle = (angle + speed + boost * 0.1) % 360;
+      el.style.setProperty('--spin', angle.toFixed(2) + 'deg');
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
-  const ease = (p) => (p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2);
-  const tick = (now) => {
-    if (!follow) {
-      const p = ((now - t0) % PERIOD) / RUN;
-      target = p <= 1 ? -30 + 160 * ease(p) : 130;
-    }
-    x += (target - x) * (follow ? 0.12 : 0.35);
-    el.style.setProperty('--glint', x.toFixed(1) + '%');
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
+  // --- Отзывы: наклон к курсору и блик под ним ---
+  if (finePointer && !reduce) {
+    document.querySelectorAll('.s-reviews li').forEach((card) => {
+      card.addEventListener('pointermove', (e) => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        card.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+        card.style.setProperty('--ry', ((px - 0.5) * 6).toFixed(2) + 'deg');
+        card.style.setProperty('--rx', ((0.5 - py) * 5).toFixed(2) + 'deg');
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--rx', '0deg');
+        card.style.setProperty('--ry', '0deg');
+      });
+    });
+  }
 })();
